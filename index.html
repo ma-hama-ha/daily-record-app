@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日々の記録アプリ - プライベート版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .max-h-\[calc\(100vh-200px\)\]::-webkit-scrollbar {
+            width: 8px;
+        }
+        .max-h-\[calc\(100vh-200px\)\]::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        .max-h-\[calc\(100vh-200px\)\]::-webkit-scrollbar-track {
+            background-color: #f1f5f9;
+        }
+        
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .modal-content-fix {
+            transform: translate3d(0, 0, 0);
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-root"></div>
+
+    <script>
+        const Icons = {
+            Calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`,
+            Plus: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+            Search: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+            TrendingUp: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+            FileText: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
+            Tag: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 6.5a2.121 2.121 0 1 1 3 3L7.5 21l-4.5.5.5-4.5 9-9Z"/><path d="M13 13 4 22"/></svg>`,
+            X: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>`,
+            Download: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`,
+            BarChart3: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>`,
+            Shield: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>`,
+            AlertCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`,
+            Trash2: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M15 2l-2-2H9L7 2v2h10V2z"/></svg>`,
+            Save: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`
+        };
+
+        let state = {
+            records: [],
+            view: 'dashboard',
+            showAddForm: false,
+            selectedRecord: null,
+            searchTerm: '',
+            filterTag: 'all',
+            newRecord: {
+                date: new Date().toISOString().split('T')[0],
+                situation: '',
+                childState: '',
+                trigger: '',
+                parentResponse: '',
+                result: '',
+                observations: {
+                    cognitive: '',
+                    sensory: '',
+                    social: '',
+                    emotional: ''
+                },
+                whatWorked: '',
+                whatDidntWork: '',
+                insights: '',
+                tags: []
+            }
+        };
+
+        const tagOptions = [
+            '感覚過敏', '対人関係', '学習面', '不安', '成功体験',
+            '失敗体験', '環境調整', '声かけ', '朝の困難', '夜の困難',
+            '食事', '睡眠', '外出', '家族関係', '進歩', '停滞'
+        ];
+
+        const initialNewRecordState = () => ({
+            date: new Date().toISOString().split('T')[0],
+            situation: '',
+            childState: '',
+            trigger: '',
+            parentResponse: '',
+            result: '',
+            observations: {
+                cognitive: '',
+                sensory: '',
+                social: '',
+                emotional: ''
+            },
+            whatWorked: '',
+            whatDidntWork: '',
+            insights: '',
+            tags: []
+        });
+
+        const setState = (newState) => {
+            Object.assign(state, newState);
+            
+            if (newState.records !== undefined) {
+                if (state.records.length > 0) {
+                    localStorage.setItem('futoko_records', JSON.stringify(state.records));
+                } else {
+                    localStorage.removeItem('futoko_records');
+                }
+            }
+            
+            renderApp();
+        };
+
+        const loadInitialData = () => {
+            const saved = localStorage.getItem('futoko_records');
+            if (saved) {
+                try {
+                    state.records = JSON.parse(saved);
+                } catch (e) {
+                    console.error('データの読み込みに失敗しました', e);
+                }
+            }
+        };
+
+        const addRecord = () => {
+            if (!state.newRecord.situation.trim()) {
+                alert('状況を入力してください');
+                return;
+            }
+
+            const record = {
+                ...state.newRecord,
+                id: Date.now(),
+                createdAt: new Date().toISOString()
+            };
+
+            setState({ 
+                records: [record, ...state.records], 
+                showAddForm: false, 
+                newRecord: initialNewRecordState() 
+            });
+        };
+
+        const deleteRecord = (id) => {
+            if (confirm('この記録を削除してもよろしいですか?')) {
+                const updatedRecords = state.records.filter(r => r.id !== id);
+                const newSelectedRecord = state.selectedRecord && state.selectedRecord.id === id ? null : state.selectedRecord;
+                setState({ records: updatedRecords, selectedRecord: newSelectedRecord });
+            }
+        };
+
+        const updateNewRecord = (field, value, subField = null) => {
+            if (subField) {
+                state.newRecord = {
+                    ...state.newRecord,
+                    observations: {
+                        ...state.newRecord.observations,
+                        [subField]: value
+                    }
+                };
+            } else {
+                state.newRecord = { ...state.newRecord, [field]: value };
+            }
+        };
+
+        const toggleTag = (tag) => {
+            const currentTags = state.newRecord.tags;
+            let newTags;
+
+            if (currentTags.includes(tag)) {
+                newTags = currentTags.filter(t => t !== tag);
+            } else {
+                newTags = [...currentTags, tag];
+            }
+            
+            state.newRecord = { ...state.newRecord, tags: newTags };
+            renderApp();
+        };
+
+        const filteredRecords = () => {
+            return state.records.filter(record => {
+                const matchesSearch = record.situation.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+                                     record.insights.toLowerCase().includes(state.searchTerm.toLowerCase());
+                const matchesTag = state.filterTag === 'all' || record.tags.includes(state.filterTag);
+                return matchesSearch && matchesTag;
+            });
+        };
+
+        const getStats = () => {
+            const total = state.records.length;
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+
+            const last7Days = state.records.filter(r => {
+                const recordDate = new Date(r.date);
+                return recordDate >= weekAgo;
+            }).length;
+
+            const tagCounts = {};
+            state.records.forEach(record => {
+                record.tags.forEach(tag => {
+                    tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                });
+            });
+
+            const topTags = Object.entries(tagCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            
+            const firstRecordDate = state.records.length > 0 ? new Date(state.records[state.records.length - 1].date) : null;
+            const totalDays = firstRecordDate ? Math.floor((Date.now() - firstRecordDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
+            return { total, last7Days, topTags, totalDays };
+        };
+
+        const exportData = () => {
+            if (state.records.length === 0) {
+                alert('エクスポートする記録がありません。');
+                return;
+            }
+            const dataStr = JSON.stringify(state.records, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `日々の記録_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            alert('データをエクスポートしました!\n大切なバックアップです。安全な場所に保管してください。');
+        };
+
+        const importData = (file) => {
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        if (confirm(`${imported.length}件の記録をインポートしますか?現在のデータは上書きされます。`)) {
+                            setState({ records: imported });
+                            alert('インポートが完了しました');
+                        }
+                    } catch (error) {
+                        alert('ファイルの読み込みに失敗しました。JSONファイルが正しいか確認してください。');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+
+        const generateAIPrompt = () => {
+            if (state.records.length === 0) {
+                alert('AI分析用のプロンプトを生成するには、まず記録を作成してください。');
+                return;
+            }
+            const currentStats = getStats();
+            let prompt = `# 日々の記録データ(AI分析用)\n\n`;
+            prompt += `## 統計サマリー\n`;
+            prompt += `- 総記録数: ${currentStats.total}件\n`;
+            prompt += `- 過去7日間: ${currentStats.last7Days}件\n\n`;
+            
+            if (currentStats.topTags.length > 0) {
+                prompt += `## よく見られる特徴(Top 5)\n`;
+                currentStats.topTags.forEach(([tag, count]) => {
+                    prompt += `- ${tag}: ${count}回\n`;
+                });
+                prompt += '\n';
+            }
+
+            prompt += `## 記録の詳細\n\n`;
+            state.records.slice(0, 20).forEach((record, index) => {
+                prompt += `### 記録${index + 1} (${record.date})\n`;
+                prompt += `**状況**: ${record.situation}\n`;
+                if (record.childState) prompt += `**子どもの様子**: ${record.childState}\n`;
+                if (record.trigger) prompt += `**きっかけ**: ${record.trigger}\n`;
+                if (record.parentResponse) prompt += `**対応**: ${record.parentResponse}\n`;
+                if (record.result) prompt += `**結果**: ${record.result}\n`;
+                
+                const obs = record.observations;
+                if (obs.cognitive || obs.sensory || obs.social || obs.emotional) {
+                    prompt += `**観察された特性**:\n`;
+                    if (obs.cognitive) prompt += `  - 認知: ${obs.cognitive}\n`;
+                    if (obs.sensory) prompt += `  - 感覚: ${obs.sensory}\n`;
+                    if (obs.social) prompt += `  - 社会性: ${obs.social}\n`;
+                    if (obs.emotional) prompt += `  - 情緒: ${obs.emotional}\n`;
+                }
+                
+                if (record.whatWorked) prompt += `**うまくいったこと**: ${record.whatWorked}\n`;
+                if (record.whatDidntWork) prompt += `**うまくいかなかったこと**: ${record.whatDidntWork}\n`;
+                if (record.insights) prompt += `**気づき**: ${record.insights}\n`;
+                if (record.tags.length > 0) prompt += `**タグ**: ${record.tags.join(', ')}\n`;
+                prompt += '\n';
+            });
+
+            if (state.records.length > 20) {
+                prompt += `\n※ 最新20件のみ表示しています(全${state.records.length}件)\n`;
+            }
+
+            prompt += `\n---\n\n`;
+            prompt += `この記録から、以下の点について分析してください:\n`;
+            prompt += `1. 子どもの特性で見えてきたパターン\n`;
+            prompt += `2. 困りごとの根本的な原因\n`;
+            prompt += `3. 効果的だった対応と効果的でなかった対応の違い\n`;
+            prompt += `4. 今後の方向性と具体的な提案\n`;
+
+            const promptBlob = new Blob([prompt], { type: 'text/plain' });
+            const url = URL.createObjectURL(promptBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `AI分析用プロンプト_${new Date().toISOString().split('T')[0]}.txt`;
+            link.click();
+
+            alert('AI分析用プロンプト(テキストファイル)をダウンロードしました!\nこの内容を信頼できるAIサービスに貼り付けて分析を依頼してください。');
+        };
+
+        const clearAllData = () => {
+            if (confirm('⚠️ 警告: すべてのデータを削除してもよろしいですか?この操作は取り消せません。\n必ず「データのエクスポート」でバックアップを取ってから実行してください。')) {
+                if (confirm('⚠️ 本当に削除しますか?バックアップは取得済みですか?')) {
+                    setState({ records: [], selectedRecord: null });
+                    alert('すべてのデータを削除しました');
+                }
+            }
+        };
+
+        const renderIcon = (iconName, className) => {
+            if (!Icons[iconName]) return '';
+            return `<span class="${className}">${Icons[iconName]}</span>`;
+        };
+
+        const renderNavButton = (targetView, iconName, label) => {
+            const isActive = state.view === targetView;
+            return `
+                <button
+                    data-action="navigate" 
+                    data-view-target="${targetView}"
+                    class="px-4 py-2 rounded-lg transition-colors ${
+                        isActive ? 'bg-white text-indigo-600 shadow' : 'text-gray-600 hover:bg-white'
+                    }"
+                >
+                    ${renderIcon(iconName, 'w-4 h-4 inline mr-2')}
+                    ${label}
+                </button>
+            `;
+        };
+
+        const renderDashboard = () => {
+            const currentStats = getStats();
+            const topTagsHtml = currentStats.topTags.length > 0 ? `
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">よく見られる特徴 (Top 5)</h3>
+                    <div class="space-y-3">
+                        ${currentStats.topTags.map(([tag, count]) => `
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-700">${tag}</span>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-32 bg-gray-200 rounded-full h-2">
+                                        <div
+                                            class="bg-indigo-600 h-2 rounded-full"
+                                            style="width: ${Math.min(100, (count / currentStats.total) * 100)}%"
+                                        ></div>
+                                    </div>
+                                    <span class="text-sm text-gray-600 w-12 text-right">${count}回</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            const recentRecordsHtml = state.records.slice(0, 3).length === 0 ? `
+                <div class="text-center py-8 text-gray-500">
+                    まだ記録がありません。<br />「新規記録」ボタンから最初の記録を作成しましょう。
+                </div>
+            ` : `
+                <div class="space-y-3">
+                    ${state.records.slice(0, 3).map(record => `
+                        <div
+                            data-record-id="${record.id}"
+                            data-action="open-record-detail"
+                            class="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors cursor-pointer"
+                        >
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="text-sm text-gray-600">${record.date}</div>
+                                <div class="flex gap-1">
+                                    ${record.tags.slice(0, 2).map(tag => `
+                                        <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded">
+                                            ${tag}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="text-gray-900 font-medium mb-1">${record.situation}</div>
+                            ${record.insights ? `<div class="text-sm text-gray-600">💡 ${record.insights}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            return `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div class="text-sm text-gray-600 mb-1">総記録数</div>
+                            <div class="text-3xl font-bold text-indigo-600">${currentStats.total}</div>
+                            <div class="text-xs text-gray-500 mt-2">累計の観察記録</div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div class="text-sm text-gray-600 mb-1">過去7日間</div>
+                            <div class="text-3xl font-bold text-green-600">${currentStats.last7Days}</div>
+                            <div class="text-xs text-gray-500 mt-2">最近の記録数</div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div class="text-sm text-gray-600 mb-1">継続日数</div>
+                            <div class="text-3xl font-bold text-purple-600">${currentStats.totalDays}</div>
+                            <div class="text-xs text-gray-500 mt-2">記録開始からの日数</div>
+                        </div>
+                    </div>
+
+                    ${topTagsHtml}
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">最近の記録</h3>
+                        ${recentRecordsHtml}
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">クイックアクション</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <button
+                                data-action="generate-prompt"
+                                ${state.records.length === 0 ? 'disabled' : ''}
+                                class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                ${renderIcon('FileText', 'w-5 h-5 text-indigo-600')}
+                                <div class="text-left">
+                                    <div class="font-medium text-gray-900">AI分析用プロンプト</div>
+                                    <div class="text-xs text-gray-600">記録をAIで分析するためのファイル生成</div>
+                                </div>
+                            </button>
+                            <button
+                                data-action="export-data"
+                                ${state.records.length === 0 ? 'disabled' : ''}
+                                class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                ${renderIcon('Download', 'w-5 h-5 text-indigo-600')}
+                                <div class="text-left">
+                                    <div class="font-medium text-gray-900">バックアップ</div>
+                                    <div class="text-xs text-gray-600">データをJSON形式で保存</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const renderRecordsView = () => {
+            const recordsListHtml = filteredRecords().length === 0 ? `
+                <div class="bg-white rounded-xl shadow-sm p-8 text-center text-gray-500 border border-gray-100">
+                    ${state.searchTerm || state.filterTag !== 'all' ? '該当する記録が見つかりません' : '記録がありません'}
+                </div>
+            ` : `
+                <div class="space-y-3">
+                    ${filteredRecords().map(record => `
+                        <div
+                            data-record-id="${record.id}"
+                            data-action="open-record-detail"
+                            class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
+                        >
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    ${renderIcon('Calendar', 'w-5 h-5 text-gray-400')}
+                                    <span class="font-medium text-gray-900">${record.date}</span>
+                                </div>
+                                <div class="flex gap-2 flex-wrap">
+                                    ${record.tags.map(tag => `
+                                        <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded">
+                                            ${tag}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="text-gray-900 font-medium mb-2">${record.situation}</div>
+                            ${record.insights ? `
+                                <div class="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                                    💡 ${record.insights}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            return `
+                <div class="space-y-4">
+                    <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="flex-1 relative">
+                                ${renderIcon('Search', 'w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2')}
+                                <input
+                                    type="text"
+                                    placeholder="記録を検索..."
+                                    value="${state.searchTerm}"
+                                    data-input-action="search"
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                />
+                            </div>
+                            <select
+                                data-input-action="filter-tag"
+                                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            >
+                                <option value="all">すべてのタグ</option>
+                                ${tagOptions.map(tag => `<option value="${tag}" ${state.filterTag === tag ? 'selected' : ''}>${tag}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+
+                    ${recordsListHtml}
+                </div>
+            `;
+        };
+
+        const renderAnalysisView = () => {
+            const tagDistributionHtml = state.records.length > 0 ? `
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">記録の統計</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-3">特徴の分布</h4>
+                            <div class="space-y-2">
+                                ${Object.entries(
+                                    state.records.reduce((acc, record) => {
+                                        record.tags.forEach(tag => {
+                                            acc[tag] = (acc[tag] || 0) + 1;
+                                        });
+                                        return acc;
+                                    }, {})
+                                )
+                                .sort((a, b) => b[1] - a[1])
+                                .slice(0, 10)
+                                .map(([tag, count]) => `
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-32 text-sm text-gray-700">${tag}</span>
+                                        <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                            <div
+                                                class="bg-indigo-600 h-2 rounded-full"
+                                                style="width: ${Math.min(100, (count / state.records.length) * 100)}%"
+                                            ></div>
+                                        </div>
+                                        <span class="text-sm text-gray-600 w-12 text-right">${count}回</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+
+            const analysisContentHtml = state.records.length === 0 ? `
+                <div class="text-center py-8 text-gray-500">
+                    まだ記録がありません。記録を作成してから分析を始めましょう。
+                </div>
+            ` : `
+                <div class="space-y-6">
+                    ${tagDistributionHtml}
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-medium text-blue-900 mb-2">📋 手順</h4>
+                        <ol class="space-y-2 text-sm text-blue-800 list-decimal list-inside">
+                            <li>下の「AI分析用プロンプトをダウンロード」ボタンをクリック</li>
+                            <li>ダウンロードしたテキストファイルを開く</li>
+                            <li>内容をコピーする</li>
+                            <li>あなたが信頼するAI(Claude、ChatGPTなど)に貼り付けて分析を依頼</li>
+                        </ol>
+                    </div>
+
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 class="font-medium text-green-900 mb-2">✅ 推奨AIサービス</h4>
+                        <ul class="space-y-2 text-sm text-green-800">
+                            <li>• <strong>Claude (Anthropic)</strong> - 長文の分析が得意</li>
+                            <li>• <strong>ChatGPT (OpenAI)</strong> - 使いやすく汎用的</li>
+                            <li>• その他、あなたが信頼するAIサービス</li>
+                        </ul>
+                        <p class="text-xs text-green-700 mt-3">
+                            ※ 各サービスのプライバシーポリシーを確認してから使用してください
+                        </p>
+                    </div>
+
+                    <button
+                        data-action="generate-prompt"
+                        class="w-full flex items-center justify-center gap-3 p-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                        ${renderIcon('Download', 'w-5 h-5')}
+                        AI分析用プロンプトをダウンロード(${state.records.length}件の記録)
+                    </button>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 class="font-medium text-yellow-900 mb-2">⚠️ プライバシーに関する注意</h4>
+                        <ul class="space-y-1 text-sm text-yellow-800">
+                            <li>• AIサービスに入力した内容は、そのサービスのサーバーに送信されます</li>
+                            <li>• 必要に応じて、子どもの名前や固有名詞を仮名に変更してください</li>
+                            <li>• 特定を避けたい情報は削除または修正してから使用してください</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 class="font-medium text-red-900 mb-2">🔴 データ管理</h4>
+                        <button 
+                            data-action="import-data-click"
+                            class="mr-3 p-2 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300 transition-colors"
+                        >
+                            インポート(上書き)
+                        </button>
+                        <input type="file" id="import-file" accept="application/json" class="hidden" />
+
+                        <button 
+                            data-action="clear-all-data"
+                            class="p-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors"
+                        >
+                            全データ削除
+                        </button>
+                        <p class="text-xs text-red-700 mt-2">
+                            データのバックアップ(エクスポート)はダッシュボードから行ってください。
+                        </p>
+                    </div>
+                </div>
+            `;
+            return analysisContentHtml;
+        };
+
+        const renderModal = () => {
+            if (!state.showAddForm && !state.selectedRecord) return '';
+
+            const detailViewHtml = state.selectedRecord ? `
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-2xl font-bold text-gray-900">${state.selectedRecord.date} の記録</h2>
+                        <button data-action="close-modal" class="text-gray-400 hover:text-gray-600">
+                            ${renderIcon('X', 'w-6 h-6')}
+                        </button>
+                    </div>
+                    <div class="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+                        <div class="flex gap-2 flex-wrap mb-4">
+                            ${state.selectedRecord.tags.map(tag => `
+                                <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full">${tag}</span>
+                            `).join('')}
+                        </div>
+                        <div class="space-y-3">
+                            <h3 class="font-semibold text-lg text-indigo-600 border-b pb-1">基本情報</h3>
+                            <p><strong class="font-medium text-gray-700">状況:</strong> ${state.selectedRecord.situation || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">子どもの様子:</strong> ${state.selectedRecord.childState || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">きっかけ:</strong> ${state.selectedRecord.trigger || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">親の対応:</strong> ${state.selectedRecord.parentResponse || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">結果:</strong> ${state.selectedRecord.result || '未記入'}</p>
+                        </div>
+                        
+                        <div class="space-y-3 pt-4 border-t">
+                            <h3 class="font-semibold text-lg text-indigo-600 border-b pb-1">特性の観察</h3>
+                            <p><strong class="font-medium text-gray-700">認知面:</strong> ${state.selectedRecord.observations.cognitive || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">感覚面:</strong> ${state.selectedRecord.observations.sensory || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">社会性:</strong> ${state.selectedRecord.observations.social || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">情緒面:</strong> ${state.selectedRecord.observations.emotional || '未記入'}</p>
+                        </div>
+
+                        <div class="space-y-3 pt-4 border-t">
+                            <h3 class="font-semibold text-lg text-indigo-600 border-b pb-1">分析と気づき</h3>
+                            <p><strong class="font-medium text-gray-700">うまくいったこと:</strong> ${state.selectedRecord.whatWorked || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">うまくいかなかったこと:</strong> ${state.selectedRecord.whatDidntWork || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">気づき・考察:</strong> ${state.selectedRecord.insights || '未記入'}</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end">
+                        <button 
+                            data-action="delete-record"
+                            data-record-id="${state.selectedRecord.id}"
+                            class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                            ${renderIcon('Trash2', 'w-5 h-5')} 削除
+                        </button>
+                    </div>
+                </div>
+            ` : '';
+
+            const formViewHtml = state.showAddForm ? `
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-gray-900">新規記録の作成</h2>
+                        <button data-action="close-modal" class="text-gray-400 hover:text-gray-600">
+                            ${renderIcon('X', 'w-6 h-6')}
+                        </button>
+                    </div>
+
+                    <form data-action="add-record-form" class="space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">日付 <span class="text-red-500">*</span></label>
+                                <input
+                                    type="date"
+                                    value="${state.newRecord.date}"
+                                    data-form-field="date"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">状況 (タイトル) <span class="text-red-500">*</span></label>
+                                <input
+                                    type="text"
+                                    placeholder="例: 朝、登校しぶりでパニックになった"
+                                    value="${state.newRecord.situation}"
+                                    data-form-field="situation"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">子どもの様子</label>
+                            <textarea
+                                placeholder="その時の子どもの言動、表情、体の動きなど"
+                                data-form-field="childState"
+                                rows="3"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+                            >${state.newRecord.childState}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">きっかけ/トリガー</label>
+                            <input
+                                type="text"
+                                placeholder="何が原因だったか、何が直前にあったか"
+                                value="${state.newRecord.trigger}"
+                                data-form-field="trigger"
+                                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                            />
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">親の対応</label>
+                                <textarea
+                                    placeholder="親が具体的にどう対応したか"
+                                    data-form-field="parentResponse"
+                                    rows="3"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+                                >${state.newRecord.parentResponse}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">結果・その後の様子</label>
+                                <textarea
+                                    placeholder="どう収束したか、その後の気分や行動"
+                                    data-form-field="result"
+                                    rows="3"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+                                >${state.newRecord.result}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                            <h3 class="text-lg font-semibold text-indigo-800 mb-3">詳細な特性の観察(任意)</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <label class="block text-sm font-medium text-gray-700">認知面</label>
+                                <input type="text" placeholder="例: こだわり、切り替えの困難" value="${state.newRecord.observations.cognitive}" data-form-field="observations" data-sub-field="cognitive" class="border border-gray-300 rounded-md p-2" />
+                                <label class="block text-sm font-medium text-gray-700">感覚面</label>
+                                <input type="text" placeholder="例: 音に敏感、肌触りを嫌がる" value="${state.newRecord.observations.sensory}" data-form-field="observations" data-sub-field="sensory" class="border border-gray-300 rounded-md p-2" />
+                                <label class="block text-sm font-medium text-gray-700">社会性</label>
+                                <input type="text" placeholder="例: 一方的な会話、場の空気を読めない" value="${state.newRecord.observations.social}" data-form-field="observations" data-sub-field="social" class="border border-gray-300 rounded-md p-2" />
+                                <label class="block text-sm font-medium text-gray-700">情緒面</label>
+                                <input type="text" placeholder="例: 感情の起伏が激しい、不安が強い" value="${state.newRecord.observations.emotional}" data-form-field="observations" data-sub-field="emotional" class="border border-gray-300 rounded-md p-2" />
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 pt-4 border-t">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">うまくいったこと (次につながる点)</label>
+                                <textarea
+                                    placeholder="親の対応や環境設定で効果的だったこと"
+                                    data-form-field="whatWorked"
+                                    rows="2"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+                                >${state.newRecord.whatWorked}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">うまくいかなかったこと (反省点)</label>
+                                <textarea
+                                    placeholder="次に見直したい対応や環境設定"
+                                    data-form-field="whatDidntWork"
+                                    rows="2"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+                                >${state.newRecord.whatDidntWork}</textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">気づき・考察 (最も重要な分析)</label>
+                                <textarea
+                                    placeholder="この出来事から得た気づきや、今後の対策に活かしたいこと"
+                                    data-form-field="insights"
+                                    rows="3"
+                                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+                                >${state.newRecord.insights}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">タグ付け</label>
+                            <div class="flex flex-wrap gap-2">
+                                ${tagOptions.map(tag => `
+                                    <button
+                                        type="button"
+                                        data-action="toggle-tag"
+                                        data-tag-name="${tag}"
+                                        class="px-3 py-1 text-sm rounded-full transition-colors ${
+                                            state.newRecord.tags.includes(tag) ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        }"
+                                    >
+                                        ${tag}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 mt-6">
+                            <button
+                                type="button"
+                                data-action="reset-form"
+                                class="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                            >
+                                リセット
+                            </button>
+                            <button
+                                type="submit"
+                                class="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                                ${renderIcon('Save', 'w-5 h-5')} 記録を保存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            ` : '';
+
+            return `
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" data-action="close-modal-overlay">
+                    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden transform transition-all modal-content-fix" data-modal-content>
+                        ${detailViewHtml || formViewHtml}
+                    </div>
+                </div>
+            `;
+        };
+
+        const renderApp = () => {
+            const appRoot = document.getElementById('app-root');
+            
+            const mainContent = `
+                <div class="min-h-screen bg-gray-50 flex flex-col">
+                    <header class="bg-indigo-600 text-white shadow-lg">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                            <h1 class="text-xl font-bold">日々の記録アプリ</h1>
+                            <button 
+                                data-action="open-add-form"
+                                class="bg-white text-indigo-600 hover:bg-indigo-50 font-medium py-2 px-4 rounded-full shadow-md flex items-center gap-2 transition-colors">
+                                ${renderIcon('Plus', 'w-5 h-5')}
+                                新規記録
+                            </button>
+                        </div>
+                    </header>
+
+                    <nav class="bg-gray-200 shadow-inner">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex space-x-4">
+                            ${renderNavButton('dashboard', 'BarChart3', 'ダッシュボード')}
+                            ${renderNavButton('records', 'Calendar', '記録一覧')}
+                            ${renderNavButton('analysis', 'Shield', 'AI分析準備')}
+                        </div>
+                    </nav>
+
+                    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+                        ${state.view === 'dashboard' ? renderDashboard() : ''}
+                        ${state.view === 'records' ? renderRecordsView() : ''}
+                        ${state.view === 'analysis' ? renderAnalysisView() : ''}
+                    </main>
+                </div>
+                ${renderModal()}
+            `;
+            
+            appRoot.innerHTML = mainContent;
+            attachEventListeners();
+        };
+
+        const attachEventListeners = () => {
+            const appRoot = document.getElementById('app-root');
+
+            appRoot.addEventListener('click', (e) => {
+                let target = e.target;
+                
+                while (target && target !== appRoot && !target.dataset.action) {
+                    target = target.parentElement;
+                }
+
+                if (target && target.dataset.action) {
+                    const action = target.dataset.action;
+                    const recordId = target.dataset.recordId;
+                    const viewTarget = target.dataset.viewTarget;
+                    const tagName = target.dataset.tagName;
+
+                    if (action === 'close-modal-overlay') {
+                        if (e.target === target) {
+                            e.preventDefault();
+                            setState({ showAddForm: false, selectedRecord: null });
+                        }
+                        return;
+                    }
+
+                    if (action !== 'toggle-tag') {
+                         e.preventDefault(); 
+                    }
+
+                    switch (action) {
+                        case 'open-add-form':
+                            setState({ showAddForm: true, newRecord: initialNewRecordState() });
+                            break;
+                        case 'close-modal':
+                            setState({ showAddForm: false, selectedRecord: null });
+                            break;
+                        
+                        case 'navigate':
+                            setState({ view: viewTarget, selectedRecord: null });
+                            break;
+
+                        case 'open-record-detail':
+                            const record = state.records.find(r => r.id === parseInt(recordId));
+                            setState({ selectedRecord: record });
+                            break;
+
+                        case 'delete-record':
+                            deleteRecord(parseInt(recordId));
+                            break;
+
+                        case 'generate-prompt':
+                            generateAIPrompt();
+                            break;
+
+                        case 'export-data':
+                            exportData();
+                            break;
+
+                        case 'clear-all-data':
+                            clearAllData();
+                            break;
+
+                        case 'toggle-tag':
+                            toggleTag(tagName);
+                            break;
+                        
+                        case 'reset-form':
+                            state.newRecord = initialNewRecordState();
+                            renderApp();
+                            break;
+
+                        case 'import-data-click':
+                            document.getElementById('import-file').click();
+                            break;
+
+                        default:
+                            console.warn(`Unknown action: ${action}`);
+                    }
+                }
+            });
+
+            const form = appRoot.querySelector('[data-action="add-record-form"]');
+            if (form) {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    addRecord();
+                });
+            }
+
+            appRoot.querySelectorAll('[data-form-field]').forEach(element => {
+                element.addEventListener('input', (e) => {
+                    const field = e.target.dataset.formField;
+                    const subField = e.target.dataset.subField;
+                    updateNewRecord(field, e.target.value, subField);
+                });
+            });
+
+            appRoot.querySelectorAll('[data-input-action]').forEach(element => {
+                const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
+                
+                element.addEventListener(eventType, (e) => {
+                    const action = e.target.dataset.inputAction;
+                    if (action === 'search') {
+                        setState({ searchTerm: e.target.value });
+                    } else if (action === 'filter-tag') {
+                        setState({ filterTag: e.target.value });
+                    }
+                });
+            });
+
+            const importInput = document.getElementById('import-file');
+            if (importInput) {
+                importInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        importData(e.target.files[0]);
+                    }
+                });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadInitialData();
+            renderApp();
+        });
+    </script>
+</body>
+</html>
