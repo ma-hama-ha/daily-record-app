@@ -6,67 +6,82 @@
     <title>日々の記録アプリ - プライベート版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* --- 💡 iOSクリック問題対応の追加 CSS 💡 --- */
-        
-        /* スクロールバーのカスタム（見た目の問題なし） */
-        .max-h-\\[calc\\(100vh-200px\\)\\]::-webkit-scrollbar {
+        .max-h-\[calc\(100vh-200px\)\]::-webkit-scrollbar {
             width: 8px;
         }
-        .max-h-\\[calc\\(100vh-200px\\)\\]::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1; /* gray-300 */
+        .max-h-\[calc\(100vh-200px\)\]::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
             border-radius: 4px;
         }
-        .max-h-\\[calc\\(100vh-200px\\)\\]::-webkit-scrollbar-track {
-            background-color: #f1f5f9; /* gray-100 */
+        .max-h-\[calc\(100vh-200px\)\]::-webkit-scrollbar-track {
+            background-color: #f1f5f9;
         }
         
-        /* 1. モーダルオーバーレイにタッチイベントの透過を防ぐ設定を追加 */
         .modal-overlay {
             background-color: rgba(0, 0, 0, 0.5);
-            -webkit-tap-highlight-color: transparent; /* タップ時のハイライトを無効化 */
-            touch-action: manipulation; /* タッチジェスチャーの操作性を改善 */
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
         
-        /* 2. モーダルコンテンツに強制的に描画レイヤーを割り当て、iOSのクリック問題を回避 */
         .modal-content-fix {
-            transform: translate3d(0, 0, 0); /* ハードウェアアクセラレーションを有効化 */
-            -webkit-overflow-scrolling: touch; /* iOSの自然なスクロールを有効化 */
+            transform: translate3d(0, 0, 0);
+            -webkit-overflow-scrolling: touch;
         }
-        
-        /* ------------------------------------------- */
     </style>
 </head>
 <body>
-
     <div id="app-root"></div>
 
     <script>
-        // Lucide Icons のインラインSVG定義 (使用しているもののみ)
         const Icons = {
-            Calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`,
-            Plus: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
-            Search: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
-            TrendingUp: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
-            FileText: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
-            Tag: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.5 6.5a2.121 2.121 0 1 1 3 3L7.5 21l-4.5.5.5-4.5 9-9Z"/><path d="M13 13 4 22"/></svg>`,
-            X: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>`,
-            Download: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`,
-            BarChart3: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bar-chart-3"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>`,
-            Shield: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>`,
-            AlertCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`,
-            Trash2: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M15 2l-2-2H9L7 2v2h10V2z"/></svg>`,
-            Save: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`
+            Calendar: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>`,
+            Plus: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+            Search: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+            TrendingUp: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+            FileText: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
+            Tag: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 6.5a2.121 2.121 0 1 1 3 3L7.5 21l-4.5.5.5-4.5 9-9Z"/><path d="M13 13 4 22"/></svg>`,
+            X: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>`,
+            Download: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`,
+            BarChart3: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>`,
+            Shield: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>`,
+            AlertCircle: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`,
+            Trash2: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M15 2l-2-2H9L7 2v2h10V2z"/></svg>`,
+            Save: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`
         };
 
-        // アプリケーションの状態管理
-        let records = [];
-        let view = 'dashboard';
-        let showAddForm = false;
-        let selectedRecord = null;
-        let searchTerm = '';
-        let filterTag = 'all';
+        let state = {
+            records: [],
+            view: 'dashboard',
+            showAddForm: false,
+            selectedRecord: null,
+            searchTerm: '',
+            filterTag: 'all',
+            newRecord: {
+                date: new Date().toISOString().split('T')[0],
+                situation: '',
+                childState: '',
+                trigger: '',
+                parentResponse: '',
+                result: '',
+                observations: {
+                    cognitive: '',
+                    sensory: '',
+                    social: '',
+                    emotional: ''
+                },
+                whatWorked: '',
+                whatDidntWork: '',
+                insights: '',
+                tags: []
+            }
+        };
 
-        // 新規記録フォームの初期状態
+        const tagOptions = [
+            '感覚過敏', '対人関係', '学習面', '不安', '成功体験',
+            '失敗体験', '環境調整', '声かけ', '朝の困難', '夜の困難',
+            '食事', '睡眠', '外出', '家族関係', '進歩', '停滞'
+        ];
+
         const initialNewRecordState = () => ({
             date: new Date().toISOString().split('T')[0],
             situation: '',
@@ -85,42 +100,26 @@
             insights: '',
             tags: []
         });
-        let newRecord = initialNewRecordState();
 
-        const tagOptions = [
-            '感覚過敏', '対人関係', '学習面', '不安', '成功体験',
-            '失敗体験', '環境調整', '声かけ', '朝の困難', '夜の困難',
-            '食事', '睡眠', '外出', '家族関係', '進歩', '停滞'
-        ];
-
-        /**
-         * 状態を更新し、UIを再描画する
-         * @param {Object} newState 新しい状態
-         */
         const setState = (newState) => {
-            // ステートの更新
-            Object.assign(window, newState);
+            Object.assign(state, newState);
             
-            // ローカルストレージへの保存処理
             if (newState.records !== undefined) {
-                if (window.records.length > 0) {
-                    localStorage.setItem('futoko_records', JSON.stringify(window.records));
+                if (state.records.length > 0) {
+                    localStorage.setItem('futoko_records', JSON.stringify(state.records));
                 } else {
                     localStorage.removeItem('futoko_records');
                 }
             }
             
-            renderApp(); // UIの再描画
+            renderApp();
         };
 
-        // --- データ処理関数 ---
-
-        // ローカルストレージからデータを読み込む（初期ロード）
         const loadInitialData = () => {
             const saved = localStorage.getItem('futoko_records');
             if (saved) {
                 try {
-                    records = JSON.parse(saved);
+                    state.records = JSON.parse(saved);
                 } catch (e) {
                     console.error('データの読み込みに失敗しました', e);
                 }
@@ -128,49 +127,48 @@
         };
 
         const addRecord = () => {
-            if (!newRecord.situation.trim()) {
+            if (!state.newRecord.situation.trim()) {
                 alert('状況を入力してください');
                 return;
             }
 
             const record = {
-                ...newRecord,
+                ...state.newRecord,
                 id: Date.now(),
                 createdAt: new Date().toISOString()
             };
 
-            // 新しい記録を配列の先頭に追加
-            setState({ records: [record, ...records], showAddForm: false, newRecord: initialNewRecordState() });
+            setState({ 
+                records: [record, ...state.records], 
+                showAddForm: false, 
+                newRecord: initialNewRecordState() 
+            });
         };
 
         const deleteRecord = (id) => {
-            if (confirm('この記録を削除してもよろしいですか？')) {
-                const updatedRecords = records.filter(r => r.id !== id);
-                const newSelectedRecord = selectedRecord && selectedRecord.id === id ? null : selectedRecord;
+            if (confirm('この記録を削除してもよろしいですか?')) {
+                const updatedRecords = state.records.filter(r => r.id !== id);
+                const newSelectedRecord = state.selectedRecord && state.selectedRecord.id === id ? null : state.selectedRecord;
                 setState({ records: updatedRecords, selectedRecord: newSelectedRecord });
             }
         };
 
-        // newRecordはsetState外で直接更新し、renderApp()を呼ぶことで反映
         const updateNewRecord = (field, value, subField = null) => {
             if (subField) {
-                newRecord = {
-                    ...newRecord,
+                state.newRecord = {
+                    ...state.newRecord,
                     observations: {
-                        ...newRecord.observations,
+                        ...state.newRecord.observations,
                         [subField]: value
                     }
                 };
             } else {
-                newRecord = { ...newRecord, [field]: value };
+                state.newRecord = { ...state.newRecord, [field]: value };
             }
-            // renderApp()は呼ばなくても、DOMがinput/textareaを自動的に更新するので、setState/renderAppは不要です。
-            // ただし、タグやリセットなど他のアクションで再レンダリングされたときに、入力値を保持するためにnewRecordに保存は必要。
-            // 今回はタグ変更時に再レンダリングが入るため、newRecordの更新は必須です。
         };
 
         const toggleTag = (tag) => {
-            const currentTags = newRecord.tags;
+            const currentTags = state.newRecord.tags;
             let newTags;
 
             if (currentTags.includes(tag)) {
@@ -179,32 +177,31 @@
                 newTags = [...currentTags, tag];
             }
             
-            newRecord = { ...newRecord, tags: newTags };
-            // タグの変更は再レンダリングを伴うため、setStateではなくnewRecordを更新後、renderAppを呼び出す。
+            state.newRecord = { ...state.newRecord, tags: newTags };
             renderApp();
         };
 
         const filteredRecords = () => {
-            return records.filter(record => {
-                const matchesSearch = record.situation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                     record.insights.toLowerCase().includes(searchTerm.toLowerCase());
-                const matchesTag = filterTag === 'all' || record.tags.includes(filterTag);
+            return state.records.filter(record => {
+                const matchesSearch = record.situation.toLowerCase().includes(state.searchTerm.toLowerCase()) ||
+                                     record.insights.toLowerCase().includes(state.searchTerm.toLowerCase());
+                const matchesTag = state.filterTag === 'all' || record.tags.includes(state.filterTag);
                 return matchesSearch && matchesTag;
             });
         };
 
         const getStats = () => {
-            const total = records.length;
+            const total = state.records.length;
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
 
-            const last7Days = records.filter(r => {
+            const last7Days = state.records.filter(r => {
                 const recordDate = new Date(r.date);
                 return recordDate >= weekAgo;
             }).length;
 
             const tagCounts = {};
-            records.forEach(record => {
+            state.records.forEach(record => {
                 record.tags.forEach(tag => {
                     tagCounts[tag] = (tagCounts[tag] || 0) + 1;
                 });
@@ -214,27 +211,25 @@
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 5);
             
-            const firstRecordDate = records.length > 0 ? new Date(records[records.length - 1].date) : null;
+            const firstRecordDate = state.records.length > 0 ? new Date(state.records[state.records.length - 1].date) : null;
             const totalDays = firstRecordDate ? Math.floor((Date.now() - firstRecordDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
             return { total, last7Days, topTags, totalDays };
         };
 
-        const stats = () => getStats();
-
         const exportData = () => {
-            if (records.length === 0) {
+            if (state.records.length === 0) {
                 alert('エクスポートする記録がありません。');
                 return;
             }
-            const dataStr = JSON.stringify(records, null, 2);
+            const dataStr = JSON.stringify(state.records, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
             link.download = `日々の記録_${new Date().toISOString().split('T')[0]}.json`;
             link.click();
-            alert('データをエクスポートしました！\n大切なバックアップです。安全な場所に保管してください。');
+            alert('データをエクスポートしました!\n大切なバックアップです。安全な場所に保管してください。');
         };
 
         const importData = (file) => {
@@ -243,7 +238,7 @@
                 reader.onload = (e) => {
                     try {
                         const imported = JSON.parse(e.target.result);
-                        if (confirm(`${imported.length}件の記録をインポートしますか？現在のデータは上書きされます。`)) {
+                        if (confirm(`${imported.length}件の記録をインポートしますか?現在のデータは上書きされます。`)) {
                             setState({ records: imported });
                             alert('インポートが完了しました');
                         }
@@ -256,18 +251,18 @@
         };
 
         const generateAIPrompt = () => {
-            if (records.length === 0) {
+            if (state.records.length === 0) {
                 alert('AI分析用のプロンプトを生成するには、まず記録を作成してください。');
                 return;
             }
-            const currentStats = stats();
-            let prompt = `# 日々の記録データ（AI分析用）\n\n`;
+            const currentStats = getStats();
+            let prompt = `# 日々の記録データ(AI分析用)\n\n`;
             prompt += `## 統計サマリー\n`;
             prompt += `- 総記録数: ${currentStats.total}件\n`;
             prompt += `- 過去7日間: ${currentStats.last7Days}件\n\n`;
             
             if (currentStats.topTags.length > 0) {
-                prompt += `## よく見られる特徴（Top 5）\n`;
+                prompt += `## よく見られる特徴(Top 5)\n`;
                 currentStats.topTags.forEach(([tag, count]) => {
                     prompt += `- ${tag}: ${count}回\n`;
                 });
@@ -275,8 +270,7 @@
             }
 
             prompt += `## 記録の詳細\n\n`;
-            // 最新20件のみを含める
-            records.slice(0, 20).forEach((record, index) => {
+            state.records.slice(0, 20).forEach((record, index) => {
                 prompt += `### 記録${index + 1} (${record.date})\n`;
                 prompt += `**状況**: ${record.situation}\n`;
                 if (record.childState) prompt += `**子どもの様子**: ${record.childState}\n`;
@@ -300,8 +294,8 @@
                 prompt += '\n';
             });
 
-            if (records.length > 20) {
-                prompt += `\n※ 最新20件のみ表示しています（全${records.length}件）\n`;
+            if (state.records.length > 20) {
+                prompt += `\n※ 最新20件のみ表示しています(全${state.records.length}件)\n`;
             }
 
             prompt += `\n---\n\n`;
@@ -318,29 +312,25 @@
             link.download = `AI分析用プロンプト_${new Date().toISOString().split('T')[0]}.txt`;
             link.click();
 
-            alert('AI分析用プロンプト（テキストファイル）をダウンロードしました！\nこの内容を信頼できるAIサービスに貼り付けて分析を依頼してください。');
+            alert('AI分析用プロンプト(テキストファイル)をダウンロードしました!\nこの内容を信頼できるAIサービスに貼り付けて分析を依頼してください。');
         };
 
         const clearAllData = () => {
-            if (confirm('⚠️ 警告: すべてのデータを削除してもよろしいですか？この操作は取り消せません。\n必ず「データのエクスポート」でバックアップを取ってから実行してください。')) {
-                if (confirm('⚠️ 本当に削除しますか？バックアップは取得済みですか？')) {
+            if (confirm('⚠️ 警告: すべてのデータを削除してもよろしいですか?この操作は取り消せません。\n必ず「データのエクスポート」でバックアップを取ってから実行してください。')) {
+                if (confirm('⚠️ 本当に削除しますか?バックアップは取得済みですか?')) {
                     setState({ records: [], selectedRecord: null });
                     alert('すべてのデータを削除しました');
                 }
             }
         };
 
-        // --- DOM生成ヘルパー関数 ---
         const renderIcon = (iconName, className) => {
             if (!Icons[iconName]) return '';
             return `<span class="${className}">${Icons[iconName]}</span>`;
         };
 
-        /**
-         * ナビゲーションボタンを生成する
-         */
         const renderNavButton = (targetView, iconName, label) => {
-            const isActive = view === targetView;
+            const isActive = state.view === targetView;
             return `
                 <button
                     data-action="navigate" 
@@ -355,13 +345,8 @@
             `;
         };
 
-        // --- ビューのレンダリング関数 (DOM構造を生成) ---
-
-        /**
-         * ダッシュボードビューをレンダリング
-         */
         const renderDashboard = () => {
-            const currentStats = stats();
+            const currentStats = getStats();
             const topTagsHtml = currentStats.topTags.length > 0 ? `
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">よく見られる特徴 (Top 5)</h3>
@@ -384,13 +369,13 @@
                 </div>
             ` : '';
 
-            const recentRecordsHtml = records.slice(0, 3).length === 0 ? `
+            const recentRecordsHtml = state.records.slice(0, 3).length === 0 ? `
                 <div class="text-center py-8 text-gray-500">
                     まだ記録がありません。<br />「新規記録」ボタンから最初の記録を作成しましょう。
                 </div>
             ` : `
                 <div class="space-y-3">
-                    ${records.slice(0, 3).map(record => `
+                    ${state.records.slice(0, 3).map(record => `
                         <div
                             data-record-id="${record.id}"
                             data-action="open-record-detail"
@@ -445,7 +430,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <button
                                 data-action="generate-prompt"
-                                ${records.length === 0 ? 'disabled' : ''}
+                                ${state.records.length === 0 ? 'disabled' : ''}
                                 class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 ${renderIcon('FileText', 'w-5 h-5 text-indigo-600')}
@@ -456,7 +441,7 @@
                             </button>
                             <button
                                 data-action="export-data"
-                                ${records.length === 0 ? 'disabled' : ''}
+                                ${state.records.length === 0 ? 'disabled' : ''}
                                 class="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 ${renderIcon('Download', 'w-5 h-5 text-indigo-600')}
@@ -471,13 +456,10 @@
             `;
         };
 
-        /**
-         * 記録一覧ビューをレンダリング
-         */
         const renderRecordsView = () => {
             const recordsListHtml = filteredRecords().length === 0 ? `
                 <div class="bg-white rounded-xl shadow-sm p-8 text-center text-gray-500 border border-gray-100">
-                    ${searchTerm || filterTag !== 'all' ? '該当する記録が見つかりません' : '記録がありません'}
+                    ${state.searchTerm || state.filterTag !== 'all' ? '該当する記録が見つかりません' : '記録がありません'}
                 </div>
             ` : `
                 <div class="space-y-3">
@@ -520,7 +502,7 @@
                                 <input
                                     type="text"
                                     placeholder="記録を検索..."
-                                    value="${searchTerm}"
+                                    value="${state.searchTerm}"
                                     data-input-action="search"
                                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                 />
@@ -530,7 +512,7 @@
                                 class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                             >
                                 <option value="all">すべてのタグ</option>
-                                ${tagOptions.map(tag => `<option value="${tag}" ${filterTag === tag ? 'selected' : ''}>${tag}</option>`).join('')}
+                                ${tagOptions.map(tag => `<option value="${tag}" ${state.filterTag === tag ? 'selected' : ''}>${tag}</option>`).join('')}
                             </select>
                         </div>
                     </div>
@@ -540,11 +522,8 @@
             `;
         };
 
-        /**
-         * AI分析準備ビューをレンダリング
-         */
         const renderAnalysisView = () => {
-            const tagDistributionHtml = records.length > 0 ? `
+            const tagDistributionHtml = state.records.length > 0 ? `
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">記録の統計</h3>
                     <div class="space-y-4">
@@ -552,7 +531,7 @@
                             <h4 class="font-medium text-gray-900 mb-3">特徴の分布</h4>
                             <div class="space-y-2">
                                 ${Object.entries(
-                                    records.reduce((acc, record) => {
+                                    state.records.reduce((acc, record) => {
                                         record.tags.forEach(tag => {
                                             acc[tag] = (acc[tag] || 0) + 1;
                                         });
@@ -567,7 +546,7 @@
                                         <div class="flex-1 bg-gray-200 rounded-full h-2">
                                             <div
                                                 class="bg-indigo-600 h-2 rounded-full"
-                                                style="width: ${Math.min(100, (count / records.length) * 100)}%"
+                                                style="width: ${Math.min(100, (count / state.records.length) * 100)}%"
                                             ></div>
                                         </div>
                                         <span class="text-sm text-gray-600 w-12 text-right">${count}回</span>
@@ -579,7 +558,7 @@
                 </div>
             ` : '';
 
-            const analysisContentHtml = records.length === 0 ? `
+            const analysisContentHtml = state.records.length === 0 ? `
                 <div class="text-center py-8 text-gray-500">
                     まだ記録がありません。記録を作成してから分析を始めましょう。
                 </div>
@@ -593,7 +572,7 @@
                             <li>下の「AI分析用プロンプトをダウンロード」ボタンをクリック</li>
                             <li>ダウンロードしたテキストファイルを開く</li>
                             <li>内容をコピーする</li>
-                            <li>あなたが信頼するAI（Claude、ChatGPTなど）に貼り付けて分析を依頼</li>
+                            <li>あなたが信頼するAI(Claude、ChatGPTなど)に貼り付けて分析を依頼</li>
                         </ol>
                     </div>
 
@@ -614,7 +593,7 @@
                         class="w-full flex items-center justify-center gap-3 p-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                     >
                         ${renderIcon('Download', 'w-5 h-5')}
-                        AI分析用プロンプトをダウンロード（${records.length}件の記録）
+                        AI分析用プロンプトをダウンロード(${state.records.length}件の記録)
                     </button>
 
                     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -632,7 +611,7 @@
                             data-action="import-data-click"
                             class="mr-3 p-2 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300 transition-colors"
                         >
-                            インポート（上書き）
+                            インポート(上書き)
                         </button>
                         <input type="file" id="import-file" accept="application/json" class="hidden" />
 
@@ -643,7 +622,7 @@
                             全データ削除
                         </button>
                         <p class="text-xs text-red-700 mt-2">
-                            データのバックアップ（エクスポート）はダッシュボードから行ってください。
+                            データのバックアップ(エクスポート)はダッシュボードから行ってください。
                         </p>
                     </div>
                 </div>
@@ -651,55 +630,51 @@
             return analysisContentHtml;
         };
 
-        /**
-         * モーダルをレンダリング（新規記録フォームまたは詳細表示）
-         */
         const renderModal = () => {
-            if (!showAddForm && !selectedRecord) return '';
+            if (!state.showAddForm && !state.selectedRecord) return '';
 
-            // 記録詳細表示のHTML
-            const detailViewHtml = selectedRecord ? `
+            const detailViewHtml = state.selectedRecord ? `
                 <div class="p-6">
                     <div class="flex justify-between items-start mb-4">
-                        <h2 class="text-2xl font-bold text-gray-900">${selectedRecord.date} の記録</h2>
+                        <h2 class="text-2xl font-bold text-gray-900">${state.selectedRecord.date} の記録</h2>
                         <button data-action="close-modal" class="text-gray-400 hover:text-gray-600">
                             ${renderIcon('X', 'w-6 h-6')}
                         </button>
                     </div>
                     <div class="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
                         <div class="flex gap-2 flex-wrap mb-4">
-                            ${selectedRecord.tags.map(tag => `
+                            ${state.selectedRecord.tags.map(tag => `
                                 <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full">${tag}</span>
                             `).join('')}
                         </div>
                         <div class="space-y-3">
                             <h3 class="font-semibold text-lg text-indigo-600 border-b pb-1">基本情報</h3>
-                            <p><strong class="font-medium text-gray-700">状況:</strong> ${selectedRecord.situation || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">子どもの様子:</strong> ${selectedRecord.childState || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">きっかけ:</strong> ${selectedRecord.trigger || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">親の対応:</strong> ${selectedRecord.parentResponse || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">結果:</strong> ${selectedRecord.result || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">状況:</strong> ${state.selectedRecord.situation || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">子どもの様子:</strong> ${state.selectedRecord.childState || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">きっかけ:</strong> ${state.selectedRecord.trigger || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">親の対応:</strong> ${state.selectedRecord.parentResponse || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">結果:</strong> ${state.selectedRecord.result || '未記入'}</p>
                         </div>
                         
                         <div class="space-y-3 pt-4 border-t">
                             <h3 class="font-semibold text-lg text-indigo-600 border-b pb-1">特性の観察</h3>
-                            <p><strong class="font-medium text-gray-700">認知面:</strong> ${selectedRecord.observations.cognitive || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">感覚面:</strong> ${selectedRecord.observations.sensory || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">社会性:</strong> ${selectedRecord.observations.social || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">情緒面:</strong> ${selectedRecord.observations.emotional || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">認知面:</strong> ${state.selectedRecord.observations.cognitive || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">感覚面:</strong> ${state.selectedRecord.observations.sensory || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">社会性:</strong> ${state.selectedRecord.observations.social || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">情緒面:</strong> ${state.selectedRecord.observations.emotional || '未記入'}</p>
                         </div>
 
                         <div class="space-y-3 pt-4 border-t">
                             <h3 class="font-semibold text-lg text-indigo-600 border-b pb-1">分析と気づき</h3>
-                            <p><strong class="font-medium text-gray-700">うまくいったこと:</strong> ${selectedRecord.whatWorked || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">うまくいかなかったこと:</strong> ${selectedRecord.whatDidntWork || '未記入'}</p>
-                            <p><strong class="font-medium text-gray-700">気づき・考察:</strong> ${selectedRecord.insights || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">うまくいったこと:</strong> ${state.selectedRecord.whatWorked || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">うまくいかなかったこと:</strong> ${state.selectedRecord.whatDidntWork || '未記入'}</p>
+                            <p><strong class="font-medium text-gray-700">気づき・考察:</strong> ${state.selectedRecord.insights || '未記入'}</p>
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end">
                         <button 
                             data-action="delete-record"
-                            data-record-id="${selectedRecord.id}"
+                            data-record-id="${state.selectedRecord.id}"
                             class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                         >
                             ${renderIcon('Trash2', 'w-5 h-5')} 削除
@@ -708,9 +683,7 @@
                 </div>
             ` : '';
 
-
-            // 新規記録フォームのHTML
-            const formViewHtml = showAddForm ? `
+            const formViewHtml = state.showAddForm ? `
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl font-bold text-gray-900">新規記録の作成</h2>
@@ -725,7 +698,7 @@
                                 <label class="block text-sm font-medium text-gray-700">日付 <span class="text-red-500">*</span></label>
                                 <input
                                     type="date"
-                                    value="${newRecord.date}"
+                                    value="${state.newRecord.date}"
                                     data-form-field="date"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                     required
@@ -736,7 +709,7 @@
                                 <input
                                     type="text"
                                     placeholder="例: 朝、登校しぶりでパニックになった"
-                                    value="${newRecord.situation}"
+                                    value="${state.newRecord.situation}"
                                     data-form-field="situation"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                                     required
@@ -751,14 +724,14 @@
                                 data-form-field="childState"
                                 rows="3"
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
-                            >${newRecord.childState}</textarea>
+                            >${state.newRecord.childState}</textarea>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">きっかけ/トリガー</label>
                             <input
                                 type="text"
                                 placeholder="何が原因だったか、何が直前にあったか"
-                                value="${newRecord.trigger}"
+                                value="${state.newRecord.trigger}"
                                 data-form-field="trigger"
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                             />
@@ -772,7 +745,7 @@
                                     data-form-field="parentResponse"
                                     rows="3"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
-                                >${newRecord.parentResponse}</textarea>
+                                >${state.newRecord.parentResponse}</textarea>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">結果・その後の様子</label>
@@ -781,21 +754,21 @@
                                     data-form-field="result"
                                     rows="3"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
-                                >${newRecord.result}</textarea>
+                                >${state.newRecord.result}</textarea>
                             </div>
                         </div>
 
                         <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-                            <h3 class="text-lg font-semibold text-indigo-800 mb-3">詳細な特性の観察（任意）</h3>
+                            <h3 class="text-lg font-semibold text-indigo-800 mb-3">詳細な特性の観察(任意)</h3>
                             <div class="grid grid-cols-2 gap-4">
                                 <label class="block text-sm font-medium text-gray-700">認知面</label>
-                                <input type="text" placeholder="例: こだわり、切り替えの困難" value="${newRecord.observations.cognitive}" data-form-field="observations" data-sub-field="cognitive" class="border border-gray-300 rounded-md p-2" />
+                                <input type="text" placeholder="例: こだわり、切り替えの困難" value="${state.newRecord.observations.cognitive}" data-form-field="observations" data-sub-field="cognitive" class="border border-gray-300 rounded-md p-2" />
                                 <label class="block text-sm font-medium text-gray-700">感覚面</label>
-                                <input type="text" placeholder="例: 音に敏感、肌触りを嫌がる" value="${newRecord.observations.sensory}" data-form-field="observations" data-sub-field="sensory" class="border border-gray-300 rounded-md p-2" />
+                                <input type="text" placeholder="例: 音に敏感、肌触りを嫌がる" value="${state.newRecord.observations.sensory}" data-form-field="observations" data-sub-field="sensory" class="border border-gray-300 rounded-md p-2" />
                                 <label class="block text-sm font-medium text-gray-700">社会性</label>
-                                <input type="text" placeholder="例: 一方的な会話、場の空気を読めない" value="${newRecord.observations.social}" data-form-field="observations" data-sub-field="social" class="border border-gray-300 rounded-md p-2" />
+                                <input type="text" placeholder="例: 一方的な会話、場の空気を読めない" value="${state.newRecord.observations.social}" data-form-field="observations" data-sub-field="social" class="border border-gray-300 rounded-md p-2" />
                                 <label class="block text-sm font-medium text-gray-700">情緒面</label>
-                                <input type="text" placeholder="例: 感情の起伏が激しい、不安が強い" value="${newRecord.observations.emotional}" data-form-field="observations" data-sub-field="emotional" class="border border-gray-300 rounded-md p-2" />
+                                <input type="text" placeholder="例: 感情の起伏が激しい、不安が強い" value="${state.newRecord.observations.emotional}" data-form-field="observations" data-sub-field="emotional" class="border border-gray-300 rounded-md p-2" />
                             </div>
                         </div>
 
@@ -807,7 +780,7 @@
                                     data-form-field="whatWorked"
                                     rows="2"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
-                                >${newRecord.whatWorked}</textarea>
+                                >${state.newRecord.whatWorked}</textarea>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">うまくいかなかったこと (反省点)</label>
@@ -816,7 +789,7 @@
                                     data-form-field="whatDidntWork"
                                     rows="2"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
-                                >${newRecord.whatDidntWork}</textarea>
+                                >${state.newRecord.whatDidntWork}</textarea>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">気づき・考察 (最も重要な分析)</label>
@@ -825,7 +798,7 @@
                                     data-form-field="insights"
                                     rows="3"
                                     class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
-                                >${newRecord.insights}</textarea>
+                                >${state.newRecord.insights}</textarea>
                             </div>
                         </div>
 
@@ -838,7 +811,7 @@
                                         data-action="toggle-tag"
                                         data-tag-name="${tag}"
                                         class="px-3 py-1 text-sm rounded-full transition-colors ${
-                                            newRecord.tags.includes(tag) ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            state.newRecord.tags.includes(tag) ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         }"
                                     >
                                         ${tag}
@@ -866,21 +839,15 @@
                 </div>
             ` : '';
 
-            // モーダル全体のHTML
             return `
-                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
-                    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden transform transition-all modal-content-fix">
+                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" data-action="close-modal-overlay">
+                    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden transform transition-all modal-content-fix" data-modal-content>
                         ${detailViewHtml || formViewHtml}
                     </div>
                 </div>
             `;
         };
 
-        // --- メインレンダリング関数 ---
-
-        /**
-         * メインアプリケーションのレンダリング
-         */
         const renderApp = () => {
             const appRoot = document.getElementById('app-root');
             
@@ -907,30 +874,24 @@
                     </nav>
 
                     <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-                        ${view === 'dashboard' ? renderDashboard() : ''}
-                        ${view === 'records' ? renderRecordsView() : ''}
-                        ${view === 'analysis' ? renderAnalysisView() : ''}
+                        ${state.view === 'dashboard' ? renderDashboard() : ''}
+                        ${state.view === 'records' ? renderRecordsView() : ''}
+                        ${state.view === 'analysis' ? renderAnalysisView() : ''}
                     </main>
                 </div>
                 ${renderModal()}
             `;
             
             appRoot.innerHTML = mainContent;
-            
-            // 💡 修正箇所：DOMにHTMLが挿入された直後にイベントリスナーを設定する 💡
             attachEventListeners();
         };
-
-
-        // --- イベントリスナーのアタッチと委譲処理（重要！） ---
 
         const attachEventListeners = () => {
             const appRoot = document.getElementById('app-root');
 
-            // 1. クリックイベントの委譲
             appRoot.addEventListener('click', (e) => {
                 let target = e.target;
-                // クリックされた要素、または親要素に data-action があるか探す
+                
                 while (target && target !== appRoot && !target.dataset.action) {
                     target = target.parentElement;
                 }
@@ -941,7 +902,14 @@
                     const viewTarget = target.dataset.viewTarget;
                     const tagName = target.dataset.tagName;
 
-                    // タグボタン以外のクリックアクションのデフォルト動作を防止（フォーム送信防止のため）
+                    if (action === 'close-modal-overlay') {
+                        if (e.target === target) {
+                            e.preventDefault();
+                            setState({ showAddForm: false, selectedRecord: null });
+                        }
+                        return;
+                    }
+
                     if (action !== 'toggle-tag') {
                          e.preventDefault(); 
                     }
@@ -959,7 +927,7 @@
                             break;
 
                         case 'open-record-detail':
-                            const record = records.find(r => r.id === parseInt(recordId));
+                            const record = state.records.find(r => r.id === parseInt(recordId));
                             setState({ selectedRecord: record });
                             break;
 
@@ -980,12 +948,11 @@
                             break;
 
                         case 'toggle-tag':
-                            // e.preventDefault()を呼ばないので、ここでタグの状態更新のみを行う
                             toggleTag(tagName);
                             break;
                         
                         case 'reset-form':
-                            newRecord = initialNewRecordState();
+                            state.newRecord = initialNewRecordState();
                             renderApp();
                             break;
 
@@ -999,7 +966,6 @@
                 }
             });
 
-            // 2. フォーム送信イベントの処理
             const form = appRoot.querySelector('[data-action="add-record-form"]');
             if (form) {
                 form.addEventListener('submit', (e) => {
@@ -1008,9 +974,6 @@
                 });
             }
 
-            // 3. input/textarea/select の変更イベント処理
-            // data-form-field (モーダル内のフォーム)
-            // input イベントは、ユーザーが文字を入力するたびに発生します
             appRoot.querySelectorAll('[data-form-field]').forEach(element => {
                 element.addEventListener('input', (e) => {
                     const field = e.target.dataset.formField;
@@ -1019,9 +982,7 @@
                 });
             });
 
-            // data-input-action (記録一覧の検索・フィルタ)
             appRoot.querySelectorAll('[data-input-action]').forEach(element => {
-                // 検索フィールドは input イベント、セレクトボックスは change イベント
                 const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
                 
                 element.addEventListener(eventType, (e) => {
@@ -1034,7 +995,6 @@
                 });
             });
 
-            // 4. インポートファイルの選択
             const importInput = document.getElementById('import-file');
             if (importInput) {
                 importInput.addEventListener('change', (e) => {
@@ -1045,11 +1005,9 @@
             }
         };
 
-        // --- アプリケーションの初期化と起動 ---
-
         document.addEventListener('DOMContentLoaded', () => {
             loadInitialData();
-            renderApp(); // 初回レンダリング
+            renderApp();
         });
     </script>
 </body>
